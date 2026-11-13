@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2f4a73" />
+  <meta name="description" content="Siravit — ช่องทางชำระเงิน ช่องทางติดต่อ คำนวณค่าธรรมเนียม และกฎกลางเดิมพัน" />
+  <title>SIRAVIT | ระบบกลางเดิมพันมาตรฐาน</title>
+
+  <!-- Google Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            siravit: {
+              50: '#f0f4f9',
+              100: '#dce5f1',
+              200: '#bdcfe3',
+              500: '#3f5f8f',
+              600: '#2f4a73',
+              700: '#243a5c',
+              800: '#1c2d47',
+              900: '#142135',
+            }
+          },
+          fontFamily: {
+            sans: ['Prompt', 'Kanit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --purple: #2f4a73;
+      --line: #e2e6ec;
+      --bg1: #f5f6f8;
+      --bg2: #eceff3;
+      --grad: linear-gradient(135deg, #3f5f8f, #2f4a73);
+      --grad-glow: linear-gradient(135deg, #4f73a8, #2f4a73);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: 'Prompt', 'Noto Sans Thai', sans-serif;
+      background: linear-gradient(160deg, #f1f3f7, #e2e7f0) fixed;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: min(100% - 32px, 580px);
+      margin: auto;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 230, 236, 0.8);
+      box-shadow: 0 10px 30px rgba(31, 41, 55, 0.06);
+    }
+
+    .m-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(47, 74, 115, 0.28);
+      transition: all 0.25s ease;
+    }
+
+    .menu-card:hover .m-icon {
+      transform: scale(1.08) rotate(-3deg);
+      background: var(--grad-glow);
+    }
+
+    /* Modal Backdrop Transitions */
+    .modal-backdrop {
+      background: rgba(20, 33, 53, 0.6);
+      backdrop-filter: blur(6px);
+      transition: opacity 0.25s ease-out;
+    }
+
+    .modal-content {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(20px) scale(0.97);
+      opacity: 0;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #bdcfe3;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2f4a73;
+    }
+
+    /* Toast Animation */
+    .toast {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+  </style>
+</head>
+<body class="pb-12 text-slate-800">
+
+  <!-- TOP HEADER & REALTIME CLOCK -->
+  <header class="sticky top-0 z-40 bg-siravit-600/95 backdrop-blur-md text-white shadow-lg border-b border-siravit-500/30">
+    <div class="wrap py-3 flex justify-between items-center px-1">
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-extrabold text-sm border border-white/20">
+          S
+        </div>
+        <a href="#" class="text-xl font-bold tracking-wider font-['Kanit'] text-white">SIRAVIT</a>
+      </div>
+      <div class="flex items-center space-x-2 bg-siravit-800/60 border border-white/10 px-3 py-1 rounded-full text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="liveClock">00:00:00 น.</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap mt-6 space-y-6">
+
+    <!-- HERO SECTION -->
+    <div class="glass-card rounded-3xl p-6 text-center relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-siravit-500/10 rounded-full filter blur-2xl"></div>
+      <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-siravit-200 text-siravit-600 text-xs md:text-sm font-medium mb-3 shadow-sm">
+        🛡️ ยินดีต้อนรับครับ อ่านกฎก่อนเล่นทุกครั้งนะครับ
+      </div>
+      <h1 class="text-4xl md:text-5xl font-extrabold text-siravit-600 tracking-tight font-['Kanit'] my-2">
+        Siravit <span class="text-xs align-top px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-normal">Online</span>
+      </h1>
+      <p class="text-lg font-bold text-slate-700">กลางเดิมพัน ไม่เอียง งดค้านดุ</p>
+      <p class="text-sm text-slate-500 mt-1">กดเลือกเมนูด้านล่างเพื่อดูรายละเอียดช่องทางชำระเงินและกฎกลาง</p>
+    </div>
+
+    <!-- QUICK MENU GRID -->
+    <div class="grid grid-cols-2 gap-3.5">
+      
+      <!-- Payment Button -->
+      <button onclick="openModal('paymentModal')" class="menu-card text-left p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all group">
+        <div class="m-icon mb-3">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10l9 5 9-5"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 font-['Kanit'] group-hover:text-siravit-600 transition-colors">Payment</h3>
+        <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
+          <span>ช่องทางชำระเงิน</span>
+          <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </button>
+
+      <!-- Calculator Button -->
+      <button onclick="openModal('calcModal')" class="menu-card text-left p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all group">
+        <div class="m-icon mb-3">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 font-['Kanit'] group-hover:text-siravit-600 transition-colors">Fee Calc</h3>
+        <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
+          <span>เช็คค่าธรรมเนียม</span>
+          <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </button>
+
+      <!-- Contact Button -->
+      <button onclick="openModal('contactModal')" class="menu-card text-left p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all group">
+        <div class="m-icon mb-3">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/><path d="M12 14.6s-3-1.8-3-3.8a1.8 1.8 0 0 1 3-1.3 1.8 1.8 0 0 1 3 1.3c0 2-3 3.8-3 3.8z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 font-['Kanit'] group-hover:text-siravit-600 transition-colors">Contact</h3>
+        <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
+          <span>ช่องทางติดต่อ</span>
+          <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </button>
+
+      <!-- Rules Button -->
+      <button onclick="openModal('rulesModal')" class="menu-card text-left p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all group">
+        <div class="m-icon mb-3">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h11v13a3 3 0 0 1-3 3H6a3 3 0 0 0 3-3V6"/><path d="M8 4a2 2 0 0 0-2 2v1h3"/><path d="M12 9h4M12 13h4"/></svg>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 font-['Kanit'] group-hover:text-siravit-600 transition-colors">Rules</h3>
+        <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
+          <span>แจ้งกฎกลางเดิมพัน</span>
+          <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        </div>
+      </button>
+
+    </div>
+
+
+    <!-- กิจกรรมดึงกลาง -->
+    <section class="space-y-4 pt-2">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <span class="text-xs font-bold tracking-widest text-slate-400">SPECIAL ACTIVITY</span>
+          <h2 class="text-xl font-extrabold text-slate-800 font-['Kanit']">กิจกรรมดึงกลาง</h2>
+          <p class="text-xs text-slate-500 mt-1">ดึงกลุ่ม รับรางวัลตามจำนวนกลุ่ม</p>
+        </div>
+        <span class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold">● เปิดให้ร่วมกิจกรรม</span>
+      </div>
+
+      <div class="space-y-3">
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-4">
+          <div class="m-icon flex-shrink-0">
+            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M14 14c3.8-.8 7 1.2 7 4.5"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-bold text-slate-800 font-['Kanit']">ดึง 3 กลุ่ม</h3>
+            <p class="text-sm text-slate-500">รับ <span class="text-xl font-extrabold text-siravit-600">5</span> บาท</p>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-4">
+          <div class="m-icon flex-shrink-0">
+            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M14 14c3.8-.8 7 1.2 7 4.5"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-bold text-slate-800 font-['Kanit']">ดึง 5 กลุ่ม</h3>
+            <p class="text-sm text-slate-500">รับ <span class="text-xl font-extrabold text-siravit-600">10</span> บาท</p>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 flex items-center gap-4">
+          <div class="m-icon flex-shrink-0">
+            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M14 14c3.8-.8 7 1.2 7 4.5"/></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-bold text-slate-800 font-['Kanit']">ดึง 10 กลุ่ม</h3>
+            <p class="text-sm text-slate-500">รับ <span class="text-xl font-extrabold text-siravit-600">20</span> บาท</p>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-siravit-50 border border-siravit-100 p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-siravit-600 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>
+        <div>
+          <h3 class="font-bold text-siravit-700 text-sm">หมายเหตุ</h3>
+          <p class="text-sm text-slate-600 mt-0.5">ดึงได้ตลอด ไม่มีรี</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK INFO SUMMARY CARDS -->
+    <div class="space-y-4 pt-2">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <span class="text-xs font-bold tracking-widest text-slate-400">SUMMARY</span>
+          <h2 class="text-xl font-extrabold text-slate-800 font-['Kanit']">ช่องทางโอนเงินด่วน</h2>
+        </div>
+        <button onclick="openModal('paymentModal')" class="text-xs font-semibold text-siravit-600 hover:text-siravit-800 flex items-center space-x-1">
+          <span>ดูทั้งหมด</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- KBANK Fast Card -->
+      <div class="p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-md flex-shrink-0">
+            KBANK
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">ธนาคารกสิกรไทย</div>
+            <div class="text-lg font-extrabold text-siravit-600 tracking-wider font-mono">1993875127</div>
+          </div>
+        </div>
+        <button onclick="copyText('1993875127', 'เลขบัญชี กสิกรไทย')" class="px-3.5 py-2 rounded-xl bg-siravit-600 hover:bg-siravit-700 text-white text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+          <span>คัดลอก</span>
+        </button>
+      </div>
+
+      <!-- TrueMoney Wallet Fast Card -->
+      <div class="p-4 rounded-2xl bg-white border-2 border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-lg shadow-md flex-shrink-0">
+            TRUE
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">ทรูมันนี่ วอลเล็ท</div>
+            <div class="text-lg font-extrabold text-siravit-600 tracking-wider font-mono">0803062493</div>
+          </div>
+        </div>
+        <button onclick="copyText('0803062493', 'เบอร์วอลเล็ท')" class="px-3.5 py-2 rounded-xl bg-siravit-600 hover:bg-siravit-700 text-white text-xs font-bold transition-colors flex items-center space-x-1.5 shadow-sm">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="3"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+          <span>คัดลอก</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center text-xs text-slate-400 pt-8 pb-4">
+      <p>© 2026 SIRAVIT Middleman Platform. All rights reserved.</p>
+      <p class="mt-1">ให้บริการด้วยความซื่อสัตย์ โปร่งใส เที่ยงธรรม</p>
+    </footer>
+
+  </main>
+
+
+  <!-- ==================== MODALS SECTION ==================== -->
+
+  <!-- 1. PAYMENT MODAL -->
+  <div id="paymentModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal('paymentModal')"></div>
+    <div class="modal-content relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-siravit-600 text-white">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <h3 class="text-lg font-bold font-['Kanit']">ช่องทางชำระเงิน (Payment)</h3>
+        </div>
+        <button onclick="closeModal('paymentModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4">
+        <!-- KBANK -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-bold text-emerald-600">ธนาคารกสิกรไทย (KBANK)</span>
+            <div class="text-xl font-extrabold text-siravit-600 font-mono tracking-wider mt-0.5">1993875127</div>
+            <span class="text-xs text-slate-500">นาย สิรวิชญ์ วัตถุ</span>
+          </div>
+          <button onclick="copyText('1993875127', 'เลขบัญชี กสิกรไทย')" class="px-3.5 py-2 rounded-xl bg-siravit-600 text-white text-xs font-bold flex items-center space-x-1 shadow-sm">
+            <span>คัดลอก</span>
+          </button>
+        </div>
+
+        <!-- TrueMoney Wallet -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-bold text-orange-500">ทรูมันนี่ วอลเล็ท (TrueMoney)</span>
+            <div class="text-xl font-extrabold text-siravit-600 font-mono tracking-wider mt-0.5">0803062493</div>
+            <span class="text-xs text-slate-500">ด.ช. สิรวิชญ์ วัตถุ</span>
+          </div>
+          <button onclick="copyText('0803062493', 'เบอร์วอลเล็ท')" class="px-3.5 py-2 rounded-xl bg-siravit-600 text-white text-xs font-bold flex items-center space-x-1 shadow-sm">
+            <span>คัดลอก</span>
+          </button>
+        </div>
+
+        <!-- QR Code Card -->
+        <div class="p-4 rounded-2xl border border-slate-200 text-center bg-white shadow-inner">
+          <p class="text-xs font-bold text-slate-500 mb-2">สแกน QR Code พร้อมเพย์</p>
+          <div class="inline-block p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <img src="data:image/png;base64,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" alt="PromptPay QR Code - ด.ช. สิรวิชญ์ วัตถุ" class="w-56 h-56 object-contain rounded-lg mx-auto" />
+          </div>
+          <p class="text-xs text-slate-500 mt-2 font-medium">ชื่อ: ด.ช. สิรวิชญ์ วัตถุ</p>
+          <p class="text-xs text-slate-400 mt-0.5">เบอร์: 080-306-2493 · รองรับทุกแอปธนาคารไทย</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 2. FEE CALCULATOR MODAL -->
+  <div id="calcModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal('calcModal')"></div>
+    <div class="modal-content relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-siravit-600 text-white">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          <h3 class="text-lg font-bold font-['Kanit']">คำนวณค่าธรรมเนียม วอเลท</h3>
+        </div>
+        <button onclick="closeModal('calcModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-5">
+        <!-- Interactive Input -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <label for="amountInput" class="block text-xs font-bold text-slate-600 mb-1">กรอกยอดเงินที่ต้องการโอน (บาท)</label>
+          <div class="relative">
+            <input type="number" id="amountInput" placeholder="เช่น 150" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-siravit-600 text-lg font-bold font-mono text-siravit-700" oninput="calculateFee()" />
+            <span class="absolute right-4 top-3.5 text-sm font-bold text-slate-400">บาท</span>
+          </div>
+
+          <!-- Calculation Result -->
+          <div class="mt-4 p-4 rounded-xl bg-siravit-50 border border-siravit-200 space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-slate-600">ค่าธรรมเนียม:</span>
+              <span id="feeDisplay" class="text-xl font-black text-siravit-600 font-mono">0 บาท</span>
+            </div>
+            <div class="flex justify-between items-center text-sm pt-2 border-t border-siravit-200/60">
+              <span class="font-bold text-slate-700">ยอดรวมที่ต้องโอนสุทธิ:</span>
+              <span id="totalDisplay" class="text-2xl font-black text-emerald-600 font-mono">0 บาท</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Fee Table -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">ตารางอัตราค่าธรรมเนียมอ้างอิง</h4>
+          <div class="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-siravit-600 text-white font-bold sticky top-0">
+                <tr>
+                  <th class="p-2.5 px-4">ยอดโอน (บาท)</th>
+                  <th class="p-2.5 px-4">ค่าธรรมเนียม</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                <tr><td class="p-2 px-4 font-mono">1 - 40</td><td class="p-2 px-4 font-bold text-siravit-600">1 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">41 - 70</td><td class="p-2 px-4 font-bold text-siravit-600">2 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">71 - 100</td><td class="p-2 px-4 font-bold text-siravit-600">3 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">101 - 130</td><td class="p-2 px-4 font-bold text-siravit-600">4 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">131 - 170</td><td class="p-2 px-4 font-bold text-siravit-600">5 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">171 - 200</td><td class="p-2 px-4 font-bold text-siravit-600">6 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">201 - 240</td><td class="p-2 px-4 font-bold text-siravit-600">7 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">241 - 270</td><td class="p-2 px-4 font-bold text-siravit-600">8 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">271 - 310</td><td class="p-2 px-4 font-bold text-siravit-600">9 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">311 - 350</td><td class="p-2 px-4 font-bold text-siravit-600">10 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">351 - 380</td><td class="p-2 px-4 font-bold text-siravit-600">11 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">381 - 410</td><td class="p-2 px-4 font-bold text-siravit-600">12 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">411 - 450</td><td class="p-2 px-4 font-bold text-siravit-600">13 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">451 - 480</td><td class="p-2 px-4 font-bold text-siravit-600">14 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">481 - 520</td><td class="p-2 px-4 font-bold text-siravit-600">15 บาท</td></tr>
+                <tr><td class="p-2 px-4 font-mono">521 ขึ้นไป</td><td class="p-2 px-4 font-bold text-siravit-600">20 บาท</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 3. CONTACT MODAL -->
+  <div id="contactModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal('contactModal')"></div>
+    <div class="modal-content relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-siravit-600 text-white">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+          <h3 class="text-lg font-bold font-['Kanit']">ช่องทางติดต่อ (Contact)</h3>
+        </div>
+        <button onclick="closeModal('contactModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-3">
+        <!-- Facebook -->
+        <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-siravit-50 border border-slate-200 transition-all group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-xl shadow-sm">f</div>
+            <div>
+              <h4 class="font-bold text-slate-800 group-hover:text-siravit-600 text-sm">Facebook</h4>
+              <p class="text-xs text-slate-500">ติดตามข่าวสารและส่งข้อความสอบถาม</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+
+        <!-- Discord -->
+        <a href="https://discord.com/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-siravit-50 border border-slate-200 transition-all group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-xl shadow-sm">DC</div>
+            <div>
+              <h4 class="font-bold text-slate-800 group-hover:text-siravit-600 text-sm">Discord</h4>
+              <p class="text-xs text-slate-500">พูดคุย แชร์จอ และติดต่อผ่านชุมชนออนไลน์</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+
+        <!-- LINE -->
+        <a href="https://line.me/ti/p/rSAIfp10r8" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-siravit-50 border border-slate-200 transition-all group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white font-bold flex items-center justify-center text-xl shadow-sm">LINE</div>
+            <div>
+              <h4 class="font-bold text-slate-800 group-hover:text-siravit-600 text-sm">LINE Official</h4>
+              <p class="text-xs text-slate-500">ช่องทางติดต่อหลัก สั่งงานและสอบถาม</p>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 4. RULES MODAL -->
+  <div id="rulesModal" class="modal fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal('rulesModal')"></div>
+    <div class="modal-content relative bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[90vh] flex flex-col">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-siravit-600 text-white">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <h3 class="text-lg font-bold font-['Kanit']">กฎกลางเดิมพัน Siravit</h3>
+        </div>
+        <button onclick="closeModal('rulesModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">✕</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 text-sm text-slate-700">
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <h4 class="font-bold text-siravit-600 mb-2 border-b border-slate-200 pb-1">ข้อตกลงและกฎกลาง</h4>
+          <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-600 leading-relaxed">
+            <li>ตั้งชื่อกลุ่มแล้วยกหักทีม ยก 5 บาท</li>
+            <li>เกมทบหรือเกมรี ถ้าไม่ได้ปักย้อนครบ นับเกมล่าสุด</li>
+            <li>เกมทบ ถ้าไม่ได้ปักเดิมหมด สามารถเปลี่ยนคนเล่นได้</li>
+            <li>สกอเท่า ขอรีได้</li>
+            <li>ไม่รับกฎเหลี่ยมต่าง ๆ : กฎเห็นชัด รูปชัด ข้อความชัด ไม่ตัวเล็ก</li>
+            <li>แก้ไขข้อความ = ไม่นับ</li>
+            <li>ช็อตยิงแปลกสามารถขอเช็คได้ : ไม่นับค้านตัวย่อ</li>
+            <li>งดส่งรูป 18+ หรือคลิป 18+</li>
+            <li>ดึงคนเกินไม่แจ้ง ปรับแพ้</li>
+            <li>มีสปอนแต่ไม่ตั้งชื่อ ปรับแพ้</li>
+            <li>ย้อนไม่ครบ ย้อนหาย ปรับแพ้</li>
+            <li>ทุกย้อนใช้เวลา 30 นาที เกินนี้ปรับ</li>
+            <li>ดึงเพื่อนไม่ครบ ปรับ</li>
+            <li>ตอนค้านชวนคุยเรื่องอื่น = ไม่ค้านแล้ว</li>
+            <li>ไม่มีค้าน 3 นาทีหลังจบเกม กลางโอนทันที</li>
+          </ol>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <h4 class="font-bold text-siravit-600 mb-2 border-b border-slate-200 pb-1">เงื่อนไขการนับย้อน</h4>
+          <ul class="list-disc pl-5 space-y-1 text-xs text-slate-600">
+            <li>ย้อนติดแชท</li>
+            <li>ย้อนติดสลิป</li>
+            <li>ย้อนติดประวัติเฟส</li>
+            <li>นับอัตช็อตยิง</li>
+            <li class="text-rose-500 font-bold">(อื่น ๆ นอกเหนือจากนี้ ไม่นับ)</li>
+          </ul>
+        </div>
+
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <h4 class="font-bold text-siravit-600 mb-2 border-b border-slate-200 pb-1">กฎเพิ่มเติม (ค้าน / เช็ค / แชร์จอ)</h4>
+          <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-600 leading-relaxed">
+            <li>ต้องค้านเป็นค้านแรกหลังจบเกมเท่านั้น นับเช็ค 30 นาที</li>
+            <li>รับรู้เข้าสายแชร์จอภายใน 3 นาที</li>
+            <li>จอดำ ปิดจอ จอหลุด จอค้าง ได้ไม่เกิน 2 นาที (ต้องแท็กบอกด้วย)</li>
+            <li>สั่งปิดจอ พิมพ์ลงกลุ่มเท่านั้น ถึงจะปิดได้</li>
+            <li>กรณีต้องเปลี่ยนชื่อไฟล์ ให้เช็คย้อนก่อน แคปย้อนไว้เป็นหลักฐานหรือแจ้งกลางก่อน ย้อนหาย = ไม่ปรับ</li>
+            <li>เช็คเจอไฟล์ปรับแพ้ เช็คคืนได้ ค้านไม่ได้</li>
+            <li>ไม่ทำตามเกิน 3 นาทีปรับ แท็กตาม (แท็กตามแล้วยังตีมึนไม่ทำตาม ปรับ)</li>
+            <li>ห้ามลบหรือโหลดอะไรตามคำสั่งของคนเช็ค (กรณีโหลด ต้องแจ้งสอบถามกลางก่อน)</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full text-xs md:text-sm font-semibold shadow-xl border border-white/10 opacity-0 pointer-events-none z-50 flex items-center space-x-2">
+    <span id="toastMsg">คัดลอกเรียบร้อยแล้ว ✓</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Realtime Clock Functionality
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const clockElement = document.getElementById('liveClock');
+      if (clockElement) {
+        clockElement.textContent = `${hours}:${minutes}:${seconds} น.`;
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Modal Control Functions
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modal.classList.add('active');
+        }, 10);
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, 250);
+      }
+    }
+
+    // Copy to Clipboard Utility with Fallback
+    function copyText(text, labelName) {
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        toastMsg.textContent = msg;
+        toast.classList.remove('opacity-0', 'pointer-events-none');
+        toast.classList.add('opacity-100');
+
+        setTimeout(() => {
+          toast.classList.remove('opacity-100');
+          toast.classList.add('opacity-0', 'pointer-events-none');
+        }, 2000);
+      }
+
+      function fallbackCopy(val) {
+        const textArea = document.createElement('textarea');
+        textArea.value = val;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        let success = false;
+        try {
+          success = document.execCommand('copy');
+        } catch (err) {}
+        document.body.removeChild(textArea);
+        return success;
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`คัดลอก ${labelName} สำเร็จแล้ว ✓`);
+        }).catch(() => {
+          if (fallbackCopy(text)) {
+            showToast(`คัดลอก ${labelName} สำเร็จแล้ว ✓`);
+          } else {
+            showToast('คัดลอกไม่สำเร็จ กรุณาเลือกคัดลอกด้วยตนเอง');
+          }
+        });
+      } else {
+        if (fallbackCopy(text)) {
+          showToast(`คัดลอก ${labelName} สำเร็จแล้ว ✓`);
+        } else {
+          showToast('คัดลอกไม่สำเร็จ กรุณาเลือกคัดลอกด้วยตนเอง');
+        }
+      }
+    }
+
+    // Fee Calculator Logic based on Official Table
+    function calculateFee() {
+      const amountInput = document.getElementById('amountInput');
+      const feeDisplay = document.getElementById('feeDisplay');
+      const totalDisplay = document.getElementById('totalDisplay');
+
+      const amount = parseFloat(amountInput.value);
+
+      if (isNaN(amount) || amount <= 0) {
+        feeDisplay.textContent = '0 บาท';
+        totalDisplay.textContent = '0 บาท';
+        return;
+      }
+
+      let fee = 0;
+      if (amount >= 1 && amount <= 40) fee = 1;
+      else if (amount >= 41 && amount <= 70) fee = 2;
+      else if (amount >= 71 && amount <= 100) fee = 3;
+      else if (amount >= 101 && amount <= 130) fee = 4;
+      else if (amount >= 131 && amount <= 170) fee = 5;
+      else if (amount >= 171 && amount <= 200) fee = 6;
+      else if (amount >= 201 && amount <= 240) fee = 7;
+      else if (amount >= 241 && amount <= 270) fee = 8;
+      else if (amount >= 271 && amount <= 310) fee = 9;
+      else if (amount >= 311 && amount <= 350) fee = 10;
+      else if (amount >= 351 && amount <= 380) fee = 11;
+      else if (amount >= 381 && amount <= 410) fee = 12;
+      else if (amount >= 411 && amount <= 450) fee = 13;
+      else if (amount >= 451 && amount <= 480) fee = 14;
+      else if (amount >= 481 && amount <= 520) fee = 15;
+      else if (amount >= 521) fee = 20;
+
+      const total = amount + fee;
+
+      feeDisplay.textContent = `${fee.toLocaleString()} บาท`;
+      totalDisplay.textContent = `${total.toLocaleString()} บาท`;
+    }
+  </script>
+</body>
+</html>
